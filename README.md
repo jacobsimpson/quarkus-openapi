@@ -13,3 +13,10 @@ mvn io.quarkus.platform:quarkus-maven-plugin:2.3.0.Final:create \
     -Dextensions="resteasy,resteasy-jackson" \
     -DbuildTool=gradle
 ```
+
+## How to exercise code generation
+
+```
+./gradlew clean openApiGenerate build spotlessApply check test >& debug
+ find build/generated-src -type f
+```

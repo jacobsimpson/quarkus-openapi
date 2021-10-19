@@ -1,0 +1,76 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Catalog API.
+  description: This is a description to go on the top of the file???
+  license:
+    name: MIT
+servers:
+    - url: http://127.0.0.1:8080
+paths:
+  /books:
+    get:
+      summary: List all books
+      operationId: listBooks
+      tags:
+        - books
+      parameters:
+        - name: limit
+          in: query
+          description: How many items to return at one time (max 100)
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: A paged array of books
+          headers:
+            x-next:
+              description: A link to the next page of responses
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Books"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Book:
+      type: object
+      required:
+        - id
+        - title
+        - author
+        - description
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        description:
+          type: string
+    Books:
+      type: array
+      items:
+        $ref: "#/components/schemas/Book"
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
