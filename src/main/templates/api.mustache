@@ -1,130 +1,88 @@
-{{>licenseInfo}}
 package {{package}};
 
-/**
- * -----------------------------------------------------------------
- * -----------------------------------------------------------------
- * -----------------------------------------------------------------
- * -----------------------------------------------------------------
- * -----------------------------------------------------------------
- * -----------------------------------------------------------------
- */
-import com.sun.jersey.api.client.GenericType;
-
-import {{invokerPackage}}.ApiException;
-import {{invokerPackage}}.ApiClient;
-import {{invokerPackage}}.Configuration;
 import {{modelPackage}}.*;
-import {{invokerPackage}}.Pair;
+import {{package}}.{{classname}}Service;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 
 {{#imports}}import {{import}};
 {{/imports}}
 
-
-{{^fullJavaUtil}}
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-{{/fullJavaUtil}}
+import java.util.List;
 
+import java.io.InputStream;
+
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.*;
+import javax.inject.Inject;
+
+{{#useBeanValidation}}
+import javax.validation.constraints.*;
+import javax.validation.Valid;
+{{/useBeanValidation}}
+{{#operations}}{{#operation}}{{#isMultipart}}import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+{{/isMultipart}}{{/operation}}{{/operations}}
+@Path("{{commonPath}}")
+{{#hasConsumes}}@Consumes({ {{#consumes}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/consumes}} }){{/hasConsumes}}
+{{#hasProduces}}@Produces({ {{#produces}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/produces}} }){{/hasProduces}}
+//@io.swagger.annotations.Api(description = "the {{{baseName}}} API")
 {{>generatedAnnotation}}
 {{#operations}}
-public class {{classname}} {
-  private ApiClient apiClient;
+public class {{classname}}  {
+    @Inject {{classname}}Service service;
 
-  public {{classname}}() {
-    this(Configuration.getDefaultApiClient());
-  }
-
-  public {{classname}}(ApiClient apiClient) {
-    this.apiClient = apiClient;
-  }
-
-  public ApiClient getApiClient() {
-    return apiClient;
-  }
-
-  public void setApiClient(ApiClient apiClient) {
-    this.apiClient = apiClient;
-  }
-
-  {{#operation}}
-  /**
-   * {{summary}}
-   * {{notes}}
-   {{#allParams}}
-   * @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{^isContainer}}{{#defaultValue}}, default to {{.}}{{/defaultValue}}){{/isContainer}}{{/required}}
-   {{/allParams}}
-   {{#returnType}}
-   * @return {{.}}
-   {{/returnType}}
-   * @throws ApiException if fails to make API call
-   {{#isDeprecated}}
-   * @deprecated
-   {{/isDeprecated}}
-   {{#externalDocs}}
-   * {{description}}
-   * @see <a href="{{url}}">{{summary}} Documentation</a>
-   {{/externalDocs}}
-   */
-  {{#isDeprecated}}
-  @Deprecated
-  {{/isDeprecated}}
-  public {{#returnType}}{{{.}}} {{/returnType}}{{^returnType}}void {{/returnType}}{{operationId}}({{#allParams}}{{{dataType}}} {{paramName}}{{^-last}}, {{/-last}}{{/allParams}}) throws ApiException {
-    Object localVarPostBody = {{#bodyParam}}{{paramName}}{{/bodyParam}}{{^bodyParam}}null{{/bodyParam}};
-    {{#allParams}}{{#required}}
-    // verify the required parameter '{{paramName}}' is set
-    if ({{paramName}} == null) {
-      throw new ApiException(400, "Missing the required parameter '{{paramName}}' when calling {{operationId}}");
+{{#operation}}
+    @{{httpMethod}}
+    {{#subresourceOperation}}@Path("{{{path}}}"){{/subresourceOperation}}
+    {{#hasConsumes}}@Consumes({ {{#consumes}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/consumes}} }){{/hasConsumes}}
+    {{#hasProduces}}@Produces({ {{#produces}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/produces}} }){{/hasProduces}}
+    @Operation(
+        summary = "{{{summary}}}",
+        description = "{{{notes}}}"{{#hasAuthMethods}},
+        authorizations = {
+            {{#authMethods}}
+            @io.swagger.annotations.Authorization(
+                value = "{{name}}"{{#isOAuth}},
+                scopes = {
+                    {{#scopes}}
+                        @io.swagger.annotations.AuthorizationScope(scope = "{{scope}}",
+                        description = "{{description}}"){{^-last}},{{/-last}}
+                    {{/scopes}}
+                }{{/isOAuth}}){{^-last}},{{/-last}}
+            {{/authMethods}}
+        }{{/hasAuthMethods}})
+    @APIResponses(
+        value = {
+        {{#responses}}
+            @APIResponse(
+                responseCode = "{{{code}}}",
+                description = "{{{message}}}",
+                content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = {{{baseType}}}.class))){{^-last}},{{/-last}}
+        {{/responses}} })
+    public Response {{nickname}}(
+            {{#isMultipart}}MultipartFormDataInput input,{{/isMultipart}}
+            {{#allParams}}{{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{^isMultipart}}{{>formParams}},{{/isMultipart}}{{#isMultipart}}{{^isFormParam}},{{/isFormParam}}{{/isMultipart}}
+            {{/allParams}}@Context SecurityContext securityContext)
+    {
+        return service.{{nickname}}(
+            {{#isMultipart}}input,{{/isMultipart}}
+            {{#allParams}}{{^isMultipart}}{{paramName}},{{/isMultipart}}{{#isMultipart}}{{^isFormParam}}{{paramName}},{{/isFormParam}}{{/isMultipart}}{{/allParams}}
+            securityContext);
     }
-    {{/required}}{{/allParams}}
-    // create path and map variables
-    String localVarPath = "{{{path}}}"{{#pathParams}}
-      .replaceAll("\\{" + "{{baseName}}" + "\\}", apiClient.escapeString({{{paramName}}}.toString())){{/pathParams}};
-
-    // query params
-    {{javaUtilPrefix}}List<Pair> localVarQueryParams = new {{javaUtilPrefix}}ArrayList<Pair>();
-    {{javaUtilPrefix}}List<Pair> localVarCollectionQueryParams = new {{javaUtilPrefix}}ArrayList<Pair>();
-    {{javaUtilPrefix}}Map<String, String> localVarHeaderParams = new {{javaUtilPrefix}}HashMap<String, String>();
-    {{javaUtilPrefix}}Map<String, String> localVarCookieParams = new {{javaUtilPrefix}}HashMap<String, String>();
-    {{javaUtilPrefix}}Map<String, Object> localVarFormParams = new {{javaUtilPrefix}}HashMap<String, Object>();
-
-    {{#queryParams}}
-    {{#collectionFormat}}localVarCollectionQueryParams.addAll(apiClient.parameterToPairs("{{{.}}}", {{/collectionFormat}}{{^collectionFormat}}localVarQueryParams.addAll(apiClient.parameterToPair({{/collectionFormat}}"{{baseName}}", {{paramName}}));
-    {{/queryParams}}
-
-    {{#headerParams}}if ({{paramName}} != null)
-      localVarHeaderParams.put("{{baseName}}", apiClient.parameterToString({{paramName}}));
-    {{/headerParams}}
-
-    {{#cookieParams}}if ({{paramName}} != null)
-      localVarCookieParams.put("{{baseName}}", apiClient.parameterToString({{paramName}}));
-    {{/cookieParams}}
-
-    {{#formParams}}if ({{paramName}} != null)
-      localVarFormParams.put("{{baseName}}", {{paramName}});
-    {{/formParams}}
-
-    final String[] localVarAccepts = {
-      {{#produces}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/produces}}
-    };
-    final String localVarAccept = apiClient.selectHeaderAccept(localVarAccepts);
-
-    final String[] localVarContentTypes = {
-      {{#consumes}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/consumes}}
-    };
-    final String localVarContentType = apiClient.selectHeaderContentType(localVarContentTypes);
-
-    String[] localVarAuthNames = new String[] { {{#authMethods}}"{{name}}"{{^-last}}, {{/-last}}{{/authMethods}} };
-
-    {{#returnType}}
-    GenericType<{{{returnType}}}> localVarReturnType = new GenericType<{{{returnType}}}>() {};
-    return apiClient.invokeAPI(localVarPath, "{{httpMethod}}", localVarQueryParams, localVarCollectionQueryParams, localVarPostBody, localVarHeaderParams, localVarCookieParams, localVarFormParams, localVarAccept, localVarContentType, localVarAuthNames, localVarReturnType);
-    {{/returnType}}{{^returnType}}
-    apiClient.invokeAPI(localVarPath, "{{httpMethod}}", localVarQueryParams, localVarCollectionQueryParams, localVarPostBody, localVarHeaderParams, localVarCookieParams, localVarFormParams, localVarAccept, localVarContentType, localVarAuthNames, null);
-    {{/returnType}}
-  }
-  {{/operation}}
+{{/operation}}
 }
 {{/operations}}

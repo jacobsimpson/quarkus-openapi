@@ -20,3 +20,9 @@ mvn io.quarkus.platform:quarkus-maven-plugin:2.3.0.Final:create \
 ./gradlew clean openApiGenerate build spotlessApply check test >& debug
  find build/generated-src -type f
 ```
+
+## How to test the service
+
+```
+curl -v -H "Content-Type: application/json" http://127.0.0.1:8080/books | jq "."
+```
